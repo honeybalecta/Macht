@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machtressourcenanalyse (ver.di)</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        /* Allgemeine Stile */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        h1, h2, h3, legend {
+            color: #d81b21; /* ver.di Rot */
+            font-weight: 700;
+        }
+        h1 {
+            text-align: center;
+            padding: 20px 30px;
+            background-color: #d81b21;
+            color: #ffffff;
+            margin: 0;
+        }
+        h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        p {
+            margin-bottom: 15px;
+        }
+        
+        /* Intro-Bereich */
+        #intro {
+            padding: 20px 30px;
+            background-color: #fffafb;
+            border-bottom: 1px solid #fde0e1;
+        }
+        #intro ul {
+            padding-left: 20px;
+        }
+        
+        /* Formular-Stile */
+        #power-form {
+            padding: 0 30px 30px 30px;
+        }
+        fieldset {
+            border: 2px solid #d81b21;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        legend {
+            font-size: 1.5em;
+            padding: 0 10px;
+            margin-left: 10px;
+        }
+        .definition {
+            font-style: italic;
+            color: #555;
+            background-color: #fdfdfd;
+            border-left: 4px solid #d81b21;
+            padding: 10px 15px;
+            margin: 10px 0 25px 0;
+            border-radius: 4px;
+        }
+        
+        /* Fragen-Styling */
+        .question-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 5px;
+        }
+        .question-group > label { /* Nur das Haupt-Label ansprechen */
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .slider-container .range-label-start,
+        .slider-container .range-label-end {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #777;
+            width: 80px; /* Feste Breite für Beschriftungen */
+            line-height: 1.2;
+        }
+        .slider-container .range-label-end {
+            text-align: right;
+        }
+        
+        .slider-container output {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #d81b21;
+            width: 30px; /* Feste Breite für die Zahl */
+            text-align: center;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            outline: none;
+            opacity: 0.9;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 5px;
+        }
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #d81b21;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #d81b21;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Wichtig für 100% Breite */
+        }
+        
+        /* Button */
+        .submit-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #ffffff;
+            background-color: #c2185b; /* Alternatives Rot */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .submit-button:hover {
+            background-color: #d81b21;
+        }
+        
+        /* NEU: PDF-Button Stil */
+        .pdf-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #ffffff;
+            background-color: #007bff; /* Blau für Download */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+        .pdf-button:hover {
+            background-color: #0056b3;
+        }
+        .pdf-button:disabled {
+            background-color: #999;
+            cursor: not-allowed;
+        }
+        
+        /* Ergebnis-Bereich */
+        #results {
+            padding: 30px;
+            background-color: #fdfdfd;
+        }
+        
+        #chart-wrapper {
+            max-width: 600px; /* Begrenzt die Breite des Diagramms */
+            margin: 20px auto; /* Zentriert das Diagramm */
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+        
+        .reflection-questions {
+            margin-top: 30px;
+        }
+        .reflection-questions label {
+            display: block;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        .reflection-questions textarea {
+            width: 100%;
+            height: 100px;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <main>
+        <h1>Machtressourcenanalyse</h1>
+
+        <section id="intro">
+            <p>Unsere gewerkschaftliche Macht fußt auf 4 Machtquellen. Diese bilden zusammen das Fundament gewerkschaftlichen Handlungsvermögens im Kampf um bessere Arbeits- und Lebensbedingungen.</p>
+            <p>Mit diesem Arbeitsblatt können wir diese 4 Machtquellen für die Branche messen und einen Ist-Stand erfassen. Hieraus lassen sich darauffolgend Schritte ableiten, um etwa erforderliche Machtquellen auszubauen.</p>
+            
+            <h3>Ziele einer Machtstrukturanalyse</h3>
+            <p>Die Machtressourcen-Analyse hat das Ziel, ein klares Bild über die verfügbaren Machtquellen zu geben, die in einer Auseinandersetzung gezielt eingesetzt werden können. Sie ermöglicht uns:</p>
+            <ul>
+                <li><strong>Stärken und Schwächen zu erkennen:</strong> Welche Ressourcen sind bereits vorhanden, welche fehlen?</li>
+                <li><strong>Strategien zu entwickeln:</strong> Auf Basis der Analyse können gezielt Maßnahmen geplant werden, um die Machtquellen auszubauen und gezielt einzusetzen.</li>
+                <li><strong>Gemeinsame Handlungsfähigkeit zu stärken:</strong> Die Analyse hilft, ein gemeinsames Verständnis für die strategische Ausgangssituation zu erzielen und die kollektive Stärke zu erhöhen.</li>
+            </ul>
+        </section>
+
+        <form id="power-form">
+            
+            <fieldset>
+                <legend>1. Strukturelle Macht</legend>
+                <p class="definition">
+                    Diese Machtform basiert auf der Stellung der Beschäftigten im ökonomischen System. Sie leitet
+                    sich aus der Möglichkeit ab, Arbeitsabläufe stören zu können. Je direkter die Arbeits-,
+                    Dienstleistungs- oder Produktionsabläufe beeinträchtigt werden, umso stärker der Hebel, um
+                    Druck auszuüben.
+                </p>
+
+                <h3>Analyse Berufsgruppe 1</h3>
+                <div class="question-group">
+                    <label for="group1_name">Wähle eine Dienstleistung/Berufsgruppe:</label>
+                    <input type="text" id="group1_name" placeholder="z.B. Pflegekräfte, Busfahrer, IT-Admin ...">
+                </div>
+
+                <div class="question-group">
+                    <label>Wenn ich streike, führt das zu einem:</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Geringer ökon. Schaden</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Hoher ökon. Schaden</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Wenn meine Kolleg*innen im Beruf streiken, führt das zu einem:</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Geringer ökon. Schaden</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Hoher ökon. Schaden</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Wenn meine Kolleg*innen im Beruf streiken, führt das zu einem: (Skala 3)</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Geringer ökon. Schaden</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Hoher ökon. Schaden</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Wie lange dauert es, bis jemand merkt, dass diese Berufsgruppe streikt?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Gar nicht / Lange</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Sofort / Ja</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Besteht eine Aktionsfähigkeit der Berufsgruppe unterhalb von Streiks?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Gar nicht</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Sofort / Ja</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Wie sehr schadet es jemandem (innerhalb u./o. außerhalb des Betriebs)?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Gar nicht</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Sehr</label>
+                        <output>5</output>
+                    </div>
+                    <label for="group1_whom" style="margin-top: 10px; font-weight: 500;">Wem schadet es?</label>
+                    <input type="text" id="group1_whom" placeholder="z.B. Patienten, Kunden, Arbeitgeber ...">
+                </div>
+
+                <div class="question-group">
+                    <label>Arbeitsmarktlage: Gibt es Fachkräftemangel in diesem Beruf?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Gar nicht</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Sofort / Ja</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <hr style="margin: 30px 0; border: 1px solid #eee;">
+
+                <h3>Analyse Berufsgruppe 2</h3>
+                <div class="question-group">
+                    <label for="group2_name">Wähle eine weitere Dienstleistung/Berufsgruppe:</label>
+                    <input type="text" id="group2_name" placeholder="z.B. Verwaltung, Reinigung, Werkstatt ...">
+                </div>
+                
+                <div class="question-group">
+                    <label>Wie lange dauert es, bis jemand merkt, dass diese Berufsgruppe streikt?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Gar nicht / Lange</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Sofort / Ja</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Besteht eine Aktionsfähigkeit der Berufsgruppe unterhalb von Streiks?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Gar nicht</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Sofort / Ja</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Wie sehr schadet es jemandem (innerhalb u./o. außerhalb des Betriebs)?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Gar nicht</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Sehr</label>
+                        <output>5</output>
+                    </div>
+                    <label for="group2_whom" style="margin-top: 10px; font-weight: 500;">Wem schadet es?</label>
+                    <input type="text" id="group2_whom" placeholder="z.B. Kollegen, Management ...">
+                </div>
+
+                <div class="question-group">
+                    <label>Arbeitsmarktlage: Gibt es Fachkräftemangel in diesem Beruf?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Gar nicht</label>
+                        <input type="range" min="1" max="10" value="5" data-category="structural">
+                        <label class="range-label-end">Sofort / Ja</label>
+                        <output>5</output>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>2. Organisationsmacht</legend>
+                <p class="definition">
+                    Sie entsteht durch den Zusammenschluss in kollektiven Organisationen wie Gewerkschaften. Wichtige Faktoren
+                    sind: Mitgliederzahlen, Infrastrukturressourcen (z. B. Streikkassen),
+                    Organisationseffizienz, Mitgliederpartizipation und kollektive Identität.
+                </p>
+
+                <h3>Organisationsgrad und Ressourcen</h3>
+                <div class="question-group">
+                    <label>ver.di Organisationsgrad in der Branche (0% - 100%)</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig (0%)</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel (100%)</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Materielle Ressourcen (Streikkasse, Räume, Büros, Bildungszentren)</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Personelle Ressourcen (Freistellung PR/BR, ver.di Hauptamtliche, VL)</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Organisationsgrad anderer Organisationen (z.B. dbb) (1=100%, 10=0%)</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Viel (100%)</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Wenig (0%)</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <h3>Aktive Beteiligung und Reaktionsfähigkeit</h3>
+                <div class="question-group">
+                    <label>Die ver.di Mitglieder identifizieren sich mit ver.di und sind engagiert.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>ver.di Mitglieder nehmen an Veranstaltungen (z.B. VL-Sitzungen) teil.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Stabile/aktive ver.di VL Strukturen/Betriebsgruppen lokal</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Bundesweite vernetzte ver.di Strukturen (Reaktionsfähigkeit)</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <h3>Wissen der Mitglieder</h3>
+                <div class="question-group">
+                    <label>Die Mitglieder haben Basis-Gewerkschaftswissen (z.B. Ablauf Tarifrunde).</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Die Mitglieder können Nicht-Mitglieder erfolgreich ansprechen.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="organizational">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>3. Institutionelle Macht</legend>
+                <p class="definition">
+                    Diese resultiert aus rechtlich verankerten Mitbestimmungs- und Beteiligungsrechten, etwa in
+                    Personal- und Betriebsräten oder Tarifverhandlungen. Sie ist das Ergebnis früherer Kämpfe.
+                </p>
+
+                <h3>Tarifliche Situation</h3>
+                <div class="question-group">
+                    <label>Wie viel Beschäftigte in der Branche sind von TVen abgedeckt?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Es existiert ein branchenweit geltender Flächen-TV?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Nein (1)</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Ja (10)</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>In der Branche dominieren Haustarifverträge</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Ja (1)</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Nein (10)</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Wie gut sind alle betrieblichen Themen vom TV abgedeckt?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Die Arbeit von Vertrauensleuten ist durch den TV geregelt (z.B. Freistellung).</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <h3>Betriebliche Mitbestimmung</h3>
+                <div class="question-group">
+                    <label>Die PR/BR/JAVen in meinem Betrieb sind in ver.di organisiert.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Ver.di BR/PR/JAVen werden als aktiv/relevant wahrgenommen.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>PR/BR/JAVen schöpfen Möglichkeiten der Mitbestimmung aus (konfliktbereit).</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Die PR/BR/JAVen gehen regelmäßig auf gewerkschaftsnahe Schulungen.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>BR/PR/JAVen nutzen die ihnen zustehenden Ressourcen (Freistellung, Büro).</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>(Teil-) Betriebs-/JA-Versammlungen, Sprechstunden finden regelmäßig statt.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <h3>Regularien und Gesetzeslagen</h3>
+                <div class="question-group">
+                    <label for="law1_name">Eine für uns wichtige Regularie/Gesetz:</label>
+                    <input type="text" id="law1_name" placeholder="Name des Gesetzes / der Regularie">
+                    <label style="font-weight: 500; margin-top: 10px;">Wie stark ist unser Einfluss darauf?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig Einfluss</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel Einfluss</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label for="law2_name">Eine für uns weitere wichtige Regularie/Gesetz:</label>
+                    <input type="text" id="law2_name" placeholder="Name des Gesetzes / der Regularie">
+                    <label style="font-weight: 500; margin-top: 10px;">Wie stark ist unser Einfluss darauf?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig Einfluss</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel Einfluss</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Sind wir durch Politik und Arbeitgeber anerkannt (Einladung in Gremien etc.)?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</L>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Haben wir eine gewerkschaftliche Mitwirkung im Aufsichts- oder Verwaltungsrat?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="institutional">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+            </fieldset>
+
+            <fieldset>
+                <legend>4. Gesellschaftliche Macht</legend>
+                <p class="definition">
+                    Diese Machtform bezieht sich auf die Fähigkeit, über betriebliche Grenzen hinaus
+                    gesellschaftliche Allianzen zu bilden und Diskurse zu prägen. Sie drückt
+                    den Stellenwert der Gewerkschaften (...) in der breiten Bevölkerung ab.
+                </p>
+
+                <h3>Öffentlichkeitsarbeit</h3>
+                <div class="question-group">
+                    <label>Die Medien berichten viel über das, was in meinem Betrieb/unserer Branche passiert.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="societal">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Über ver.di-eigene (Social Media) Kanäle wird das Geschehen nach außen getragen.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="societal">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <h3>Präsenz in gesellschaftlichen Meinungsbildungsprozessen</h3>
+                <div class="question-group">
+                    <label for="group_relevant">Für welche zivilgesellschaftlichen Gruppen sind wir relevant?</label>
+                    <input type="text" id="group_relevant" placeholder="z.B. Klimaaktivisten, Patientenverbände ...">
+                    <label style="font-weight: 500; margin-top: 10px;">Wie ausgeprägt ist die Zusammenarbeit?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="societal">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label for="group_partners">Welche Zusammenarbeit passiert mit Bündnispartner*innen?</label>
+                    <input type="text" id="group_partners" placeholder="Name der Bündnispartner">
+                    <label style="font-weight: 500; margin-top: 10px;">Wie ausgeprägt ist die Zusammenarbeit?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="societal">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <div class="question-group">
+                    <label>Werden ver.di Kolleg*innen in politische Debatten eingeladen?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="societal">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+
+                <h3>Gesellschaftliche Relevanz</h3>
+                <div class="question-group">
+                    <label>Als Gewerkschaft haben wir einen Stellenwert für das Allgemeininteresse.</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="societal">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label>Unsere Jobs und Branche sind Teil der kritischen Infrastruktur?</label>
+                    <div class="slider-container">
+                        <label class="range-label-start">Wenig</label>
+                        <input type="range" min="1" max="10" value="5" data-category="societal">
+                        <label class="range-label-end">Viel</label>
+                        <output>5</output>
+                    </div>
+                </div>
+            </fieldset>
+
+            <button type="submit" class="submit-button">Analyse Auswerten</button>
+
+        </form>
+
+        <section id="results" style="display: none;">
+            <h2>Auswertung</h2>
+            <p>Hier ist dein Ist-Stand der verschiedenen Machtquellen. Das Netzdiagramm visualisiert die Balance deiner Machtressourcen (0% = innerster Kreis, 100% = äußerster Kreis). Fahre mit der Maus über die Punkte für Details.</p>
+            
+            <div id="chart-wrapper">
+                <canvas id="radarChart"></canvas>
+            </div>
+
+            <div class="reflection-questions">
+                <h3>Reflexion</h3>
+                <label for="reflection1">Wie stark unterschieden sich die verschiedenen Werte (relativ) voneinander? Woran liegt das?</label>
+                <textarea id="reflection1"></textarea>
+
+                <label for="reflection2">Welche Machtquelle kannst/möchtest du ausbauen?</label>
+                <textarea id="reflection2"></textarea>
+                
+                <label for="reflection3">Kannst du eine Schwäche in einer Machtquelle durch eine andere ausgleichen?</label>
+                <textarea id="reflection3"></textarea>
+
+                <label for="reflection4">Wie hast du vor, das anzugehen?</label>
+                <textarea id="reflection4"></textarea>
+            </div>
+            
+            <button id="save-pdf-button" class="pdf-button">PDF speichern</button>
+
+        </section>
+    </main>
+
+    <script>
+        // Globale Variable für das Diagramm-Objekt
+        let myRadarChart = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('power-form');
+            const resultsSection = document.getElementById('results');
+            
+            // NEU: jsPDF initialisieren (wird für die PDF-Funktion benötigt)
+            const { jsPDF } = window.jspdf;
+
+            // --- 1. Slider-Werte live anzeigen ---
+            const sliders = document.querySelectorAll('input[type="range"]');
+            sliders.forEach(slider => {
+                const output = slider.parentElement.querySelector('output');
+                if (output) {
+                    output.textContent = slider.value;
+                    slider.addEventListener('input', (event) => {
+                        output.textContent = event.target.value;
+                    });
+                }
+            });
+
+            // --- 2. Formular-Auswertung ---
+            form.addEventListener('submit', (event) => {
+                event.preventDefault(); 
+
+                // Maximalpunktzahlen laut Auswertungsbogen
+                const maxScores = {
+                    structural: 110,
+                    organizational: 100,
+                    institutional: 150,
+                    societal: 70
+                };
+
+                // Punktzahlen berechnen
+                const scores = {
+                    structural: 0,
+                    organizational: 0,
+                    institutional: 0,
+                    societal: 0
+                };
+
+                const categorySliders = document.querySelectorAll('input[type="range"][data-category]');
+                categorySliders.forEach(slider => {
+                    const category = slider.dataset.category;
+                    if (scores.hasOwnProperty(category)) {
+                        scores[category] += parseInt(slider.value, 10);
+                    }
+                });
+
+                // Prozentzahlen berechnen
+                const percentages = {
+                    structural: (scores.structural / maxScores.structural) * 100,
+                    organizational: (scores.organizational / maxScores.organizational) * 100,
+                    institutional: (scores.institutional / maxScores.institutional) * 100,
+                    societal: (scores.societal / maxScores.societal) * 100
+                };
+
+                // --- 3. Ergebnisse visualisieren (Netzdiagramm) ---
+                if (myRadarChart) {
+                    myRadarChart.destroy();
+                }
+
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                myRadarChart = new Chart(ctx, {
+                    type: 'radar', 
+                    data: {
+                        labels: [
+                            'Strukturelle Macht', 
+                            'Organisationsmacht', 
+                            'Institutionelle Macht', 
+                            'Gesellschaftliche Macht'
+                        ],
+                        datasets: [{
+                            label: 'Erreichte Macht (in %)',
+                            data: [
+                                percentages.structural.toFixed(1),
+                                percentages.organizational.toFixed(1),
+                                percentages.institutional.toFixed(1),
+                                percentages.societal.toFixed(1)
+                            ],
+                            fill: true,
+                            backgroundColor: 'rgba(216, 27, 33, 0.2)',
+                            borderColor: 'rgb(216, 27, 33)',
+                            pointBackgroundColor: 'rgb(216, 27, 33)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(216, 27, 33)'
+                        }]
+                    },
+                    options: {
+                        // WICHTIG: animation: false ist besser für html2canvas
+                        animation: {
+                            duration: 0 
+                        },
+                        scales: {
+                            r: { 
+                                angleLines: { display: true },
+                                suggestedMin: 0, 
+                                suggestedMax: 100, 
+                                ticks: {
+                                    stepSize: 20,
+                                    callback: function(value) { return value + '%' }
+                                }
+                            }
+                        },
+                        elements: { line: { borderWidth: 3 } },
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return (context.dataset.label || '') + ': ' + context.parsed.r + '%';
+                                    },
+                                    afterLabel: function(context) {
+                                        const category = context.label;
+                                        let rawScore = '';
+                                        if (category === 'Strukturelle Macht') {
+                                            rawScore = `(${scores.structural} / ${maxScores.structural} Pkt.)`;
+                                        } else if (category === 'Organisationsmacht') {
+                                            rawScore = `(${scores.organizational} / ${maxScores.organizational} Pkt.)`;
+                                        } else if (category === 'Institutionelle Macht') {
+                                            rawScore = `(${scores.institutional} / ${maxScores.institutional} Pkt.)`;
+                                        } else if (category === 'Gesellschaftliche Macht') {
+                                            rawScore = `(${scores.societal} / ${maxScores.societal} Pkt.)`;
+                                        }
+                                        return rawScore;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                resultsSection.style.display = 'block';
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // --- 4. NEU: PDF-Generierungs-Logik ---
+            const pdfButton = document.getElementById('save-pdf-button');
+            pdfButton.addEventListener('click', generatePDF);
+
+            /**
+             * Hilfsfunktion zum Hinzufügen von Text zur PDF mit automatischem Zeilenumbruch und Seitenumbruch.
+             * Gibt die Y-Position nach dem Hinzufügen des Textes zurück.
+             */
+            function addTextToPDF(doc, title, text, startY, pageMargin, pageWidth, pageHeight) {
+                let currentY = startY;
+                
+                // Titel hinzufügen
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text(title, pageMargin, currentY);
+                currentY += 8;
+
+                // Inhaltstext hinzufügen
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                
+                // Text in Zeilen aufteilen, die auf die Seite passen
+                const lines = doc.splitTextToSize(text || '(Keine Angabe)', pageWidth - pageMargin * 2);
+                
+                lines.forEach(line => {
+                    // Prüfen, ob eine neue Seite benötigt wird
+                    if (currentY > pageHeight - pageMargin) {
+                        doc.addPage();
+                        currentY = pageMargin;
+                    }
+                    doc.text(line, pageMargin, currentY);
+                    currentY += 6; // Zeilenhöhe (ca. 6mm)
+                });
+                
+                return currentY + 10; // Etwas Abstand für den nächsten Abschnitt
+            }
+
+            /**
+             * Hauptfunktion zum Generieren der PDF
+             */
+            async function generatePDF() {
+                pdfButton.textContent = 'PDF wird generiert...';
+                pdfButton.disabled = true;
+
+                try {
+                    const doc = new jsPDF('p', 'mm', 'a4'); // Portrait, Millimeter, A4
+                    const pageMargin = 15;
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    const pageHeight = doc.internal.pageSize.getHeight();
+                    const contentWidth = pageWidth - pageMargin * 2;
+                    let currentY = pageMargin;
+
+                    // --- SEITE 1: Titel & Diagramm ---
+                    doc.setFontSize(20);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Auswertung Machtressourcenanalyse', pageMargin, currentY);
+                    currentY += 15;
+
+                    const chartCanvas = document.getElementById('radarChart');
+                    const chartImage = chartCanvas.toDataURL('image/png', 1.0);
+                    
+                    // Diagramm einfügen (zentriert und skaliert)
+                    const chartWidth = contentWidth * 0.9;
+                    const chartHeight = chartWidth; // Da Netzdiagramme meist quadratisch sind
+                    const chartX = (pageWidth - chartWidth) / 2;
+                    doc.addImage(chartImage, 'PNG', chartX, currentY, chartWidth, chartHeight);
+                    currentY += chartHeight + 15;
+                    
+                    // --- SEITE 2: Reflexion ---
+                    doc.addPage();
+                    currentY = pageMargin;
+                    doc.setFontSize(20);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Persönliche Reflexion', pageMargin, currentY);
+                    currentY += 15;
+                    
+                    // Die 4 Reflexionsfragen nacheinander hinzufügen
+                    const reflection1 = document.getElementById('reflection1').value;
+                    const reflection2 = document.getElementById('reflection2').value;
+                    const reflection3 = document.getElementById('reflection3').value;
+                    const reflection4 = document.getElementById('reflection4').value;
+
+                    currentY = addTextToPDF(doc, '1. Unterschiede der Werte und Gründe:', reflection1, currentY, pageMargin, pageWidth, pageHeight);
+                    currentY = addTextToPDF(doc, '2. Welche Machtquelle ausbauen?', reflection2, currentY, pageMargin, pageWidth, pageHeight);
+                    currentY = addTextToPDF(doc, '3. Schwächen ausgleichen?', reflection3, currentY, pageMargin, pageWidth, pageHeight);
+                    currentY = addTextToPDF(doc, '4. Wie vorgehen?', reflection4, currentY, pageMargin, pageWidth, pageHeight);
+
+                    // --- SEITE 3 (ff.): Die Formular-Antworten ---
+                    doc.addPage();
+                    currentY = pageMargin;
+                    doc.setFontSize(20);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Ausgefüllter Analysebogen', pageMargin, currentY);
+                    currentY += 15;
+
+                    const formElement = document.getElementById('power-form');
+                    
+                    // Wir setzen den Hintergrund des Formulars explizit auf Weiß für html2canvas
+                    formElement.style.backgroundColor = '#ffffff'; 
+                    
+                    const formCanvas = await html2canvas(formElement, {
+                        scale: 2, // Höhere Auflösung für bessere Textqualität
+                        useCORS: true
+                    });
+                    
+                    formElement.style.backgroundColor = ''; // Stil zurücksetzen
+                    
+                    const imgData = formCanvas.toDataURL('image/png');
+                    const imgProps = doc.getImageProperties(imgData);
+                    
+                    // Bildproportionen berechnen
+                    const pdfImgWidth = contentWidth;
+                    const pdfImgHeight = (imgProps.height * pdfImgWidth) / imgProps.width;
+
+                    let heightLeft = pdfImgHeight;
+                    let position = currentY; // Startposition auf der aktuellen Seite
+
+                    // Das Bild auf die erste Seite (bzw. die aktuelle Seite) zeichnen
+                    doc.addImage(imgData, 'PNG', pageMargin, position, pdfImgWidth, pdfImgHeight);
+                    heightLeft -= (pageHeight - position - pageMargin); // Höhe, die auf die Seite passt, abziehen
+
+                    // Solange das Bild noch Höhe übrig hat, neue Seiten hinzufügen
+                    while (heightLeft > 0) {
+                        position = heightLeft - pdfImgHeight; // Negative Y-Position für das Bild
+                        doc.addPage();
+                        doc.addImage(imgData, 'PNG', pageMargin, position, pdfImgWidth, pdfImgHeight);
+                        heightLeft -= pageHeight;
+                    }
+
+                    // --- Speichern ---
+                    doc.save('Machtressourcenanalyse.pdf');
+
+                } catch (error) {
+                    console.error("Fehler beim Erstellen der PDF:", error);
+                    alert("Es gab einen Fehler beim Erstellen der PDF. Bitte versuchen Sie es erneut.");
+                } finally {
+                    // Button-Status zurücksetzen
+                    pdfButton.textContent = 'PDF speichern';
+                    pdfButton.disabled = false;
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
